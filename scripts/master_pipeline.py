@@ -1,127 +1,81 @@
 """
-Master Pipeline for Bioinformatics Analysis
-This script reads a DNA sequence from
-a FASTA file, transcribes it to RNA, and translates it into a protein sequence.
-This pipeline integrates the following steps:
-1. Reading a FASTA file to extract the DNA sequence.
-2. Transcribing the DNA sequence to RNA.
-3. Translating the RNA sequence into a protein sequence using codon mapping.
-The script is designed to be modular, allowing for easy extension
-and integration of additional bioinformatics analyses in the future.
+This script is a simple bioinformatics pipeline that reads a DNA sequence from
+a FASTA file, transcribes it into RNA, and then translates the RNA into a protein sequence.
+The script includes error handling to manage cases where the specified FASTA file cannot be found.
+The pipeline consists of three main functions:
+1. read_and_clean_fasta: Reads a FASTA file and extracts the DNA sequence,
+    ensuring it is clean and free of
+    whitespace
+2. transcribe_dna: Transcribes a DNA string into an RNA string by replacing 'T' with 'U'.
+3. translate_rna: Translates an RNA string into a protein sequence by reading codons
+    (groups of 3 nucleotides) and mapping them to amino acids using a predefined codon table.
+The script uses a codon table to map RNA codons to their corresponding amino acids, including stop codons. The final output is the translated protein sequence, which is printed to the console. If the specified FASTA file cannot be found, an error message is displayed to inform the user.
 """
 
-# Importing random is not necessary for the current pipeline, but it can be used for future extensions such as simulating mutations or generating random sequences.
-import random
+# Dictionary mapping RNA codons to their corresponding amino acids (single-letter codes)
+codon_table = {
+    "AUG": "M", "UUU": "F", "GGC": "G", "CCA": "P",
+    "UAA": "*", "UAG": "*", "UGA": "*"
+}
 
+# A function to read a FASTA file and extract the DNA sequence, ensuring it is clean and free of whitespace.
+def read_and_clean_fasta(path):
+    """ Opens the FASTA file, grabs the sequence line, and strips whitespace """
 
-def read_fasta(file_path):
-    """ Reads a FASTA file and combines all sequence lines, ignoring headers """
-
-    # Initialize an empty list to store sequence lines
-    sequence_lines = []
-
-    # Open the FASTA file and read it line by line
-    with open(file_path, "r") as file:
-        for line in file:
-            line = line.strip()
-            if line.startswith(">") or not line:
-                continue
-            # Add the sequence line to the list
-            sequence_lines.append(line)
-
-    # Join all sequence lines into a single string and convert to uppercase
-    return "".join(sequence_lines).upper()
-
-
-def transcribe_dna(dna_sequence):
-    """ Transcribes DNA to RNA by replacing Thymine (T) with Uracil (U) """
-
-    # Replace 'T' with 'U' to transcribe DNA to RNA
-    transcription_table = str.maketrans("T", "U")
-
-    # Use the translation table to convert the DNA sequence to RNA
-    return dna_sequence.translate(transcription_table)
-
-
-def translate_rna(rna_sequence):
-    """ Translates RNA codons into an amino acid protein chain """
-
-    codon_table = {
-        'AUA':'I', 'AUC':'I', 'AUU':'I', 'AUG':'M',
-        'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACU':'T',
-        'AAC':'N', 'AAU':'N', 'AAA':'K', 'AAG':'K',
-        'AGC':'S', 'AGU':'S', 'AGA':'R', 'AGG':'R',
-        'CUA':'L', 'CUC':'L', 'CUG':'L', 'CUU':'L',
-        'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCU':'P',
-        'CAC':'H', 'CAU':'H', 'CAA':'Q', 'CAG':'Q',
-        'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGU':'R',
-        'GUA':'V', 'GUC':'V', 'GUG':'V', 'GUU':'V',
-        'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCU':'A',
-        'GAC':'D', 'GAU':'D', 'GAA':'E', 'GAG':'E',
-        'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGU':'G',
-        'UCA':'S', 'UCC':'S', 'UCG':'S', 'UCU':'S',
-        'UUC':'F', 'UUU':'F', 'UUA':'L', 'UUG':'L',
-        'UAC':'Y', 'UAU':'Y', 'UAA':'*', 'UAG':'*', 'UGA':'*'
-    }
-
-    # Find the first start codon (AUG)
-    start_index = rna_sequence.find("AUG")
+    # We open the specified FASTA file in read mode and read all lines into a list. The first line is typically a header, so we focus on the second line which contains the DNA sequence.
+    with open(path, "r") as file:
+        lines = file.readlines()
     
-    # If there is no AUG in the entire sequence, we cannot produce a protein
-    if start_index == -1:
-        print("Warning: No AUG start codon found in sequence. Translation aborted.")
-        return ""
+    clean_dna = lines[1].strip()
+    return clean_dna
 
+# A function to transcribe a DNA string into an RNA string by replacing 'T' with 'U'.
+def transcribe_dna(dna_string):
+    """Transcribes a DNA string into an RNA string."""
 
-    # An empty string to accumulate the resulting protein sequence
-    protein = ""
+    # We create a translation table that maps 'T' to 'U' for the transcription process
+    transcription_table = str.maketrans("T", "U")
+    rna = dna_string.translate(transcription_table)
+    return rna
 
-    # Loop through the RNA sequence in steps of 3 to read codons
-    for i in range(start_index, len(rna_sequence), 3):
-        codon = rna_sequence[i:i+3]
+# A function to translate an RNA string into a protein sequence by reading codons (groups of 3 nucleotides) and mapping them to amino acids.
+def translate_rna(rna_string):
+    """ Loops through RNA by 3s and builds a protein sequence safely """
 
-        # Check if the codon is complete (3 nucleotides). If not, print a warning and break the loop.
+    # Initialize an empty string to accumulate the resulting protein sequence as we translate each codon.
+    protein_sequence = ""
+    
+    # Loop through the RNA string in steps of 3 to read codons
+    for i in range(0, len(rna_string), 3):
+        codon = rna_string[i:i+3]
+        
+        # If the codon is less than 3 nucleotides, it cannot be translated, so we break out of the loop
         if len(codon) < 3:
-            print(f"Warning: Incomplete trailing codon '{codon}' ignored.")
             break
-
-        # Look up the amino acid corresponding to the RNA codon in the codon table. If the codon is not found, use "?" as a placeholder.
+        
+        # Look up the amino acid for the codon, defaulting to "?" if the codon is not found in the table
         amino_acid = codon_table.get(codon, "?")
-
-        # If the amino acid is an empty string, it indicates a stop codon, so we break the loop to end translation.
+        
+        # If the amino acid is a stop codon ("*"), we stop translating further
         if amino_acid == "*":
             break
         
         # Add the amino acid to the growing protein sequence
-        protein += amino_acid
+        protein_sequence += amino_acid
 
-    # Print the current codon and its corresponding amino acid for debugging purposes, allowing us to trace the translation process step by step.
-    return protein
+    # Return the final protein sequence after processing all codons    
+    return protein_sequence
 
-# Return the final protein sequence after processing all codons
-if __name__ == "__main__":
-    file_path = "../sample.fasta"
+# Main execution block to read the FASTA file, transcribe the DNA, and translate it into a protein sequence.
+file_path = r"C:\Users\Gebruiker\Documents\Visual Studio 18\My codes\bioinformatics\sample.fasta"
 
-    # Try and except block to handle potential file-related errors gracefully
-    try:
-        print("Starting Master Pipeline...")
+# We wrap the main processing steps in a try-except block to handle potential file-related errors gracefully.
+try:
+    dna_data = read_and_clean_fasta(file_path)
+    rna_data = transcribe_dna(dna_data)
+    final_protein = translate_rna(rna_data)
+    print("Final Protein product: ", final_protein)
 
-        # Read the DNA sequence from the specified FASTA file and store it in the variable 'dna'. The read_fasta function will handle the file reading and
-        dna= read_fasta(file_path)
-
-        # Print the length of the loaded DNA sequence to confirm successful reading and provide feedback on the size of the data being processed.
-        print(f"Loaded DNA sequence ({len(dna)} base pairs).")
-
-        # Transcribe the DNA sequence to RNA using the transcribe_dna function and store the resulting RNA sequence in the variable 'rna'.
-        rna = transcribe_dna(dna)
-
-        # Translate the RNA sequence into a protein sequence using the translate_rna function and store the resulting protein sequence in the variable 'protein_product'.
-        protein_product = translate_rna(rna)
-
-        # Print the final protein product to the console, providing a clear output of the result of the entire pipeline. This allows users to see the end result of the transcription and translation processes.
-        print("\n--- Pipeline Success ---")
-        print("Final Protein Product: ", protein_product)
-
-    # Handle the case where the specified FASTA file is not found, providing a user-friendly error message to help diagnose the issue.
-    except FileNotFoundError:
-        print(f"Error: The file at '{file_path}' was not found. Check your path!")
+# If the specified file cannot be found at the given path, we catch the FileNotFoundError and print an error message to inform the user.
+except FileNotFoundError:
+    print("Error: The file could not be found! Please double-check your folder path.")
