@@ -85,7 +85,7 @@ file_path = "../sample.fasta"
 
 # Print a header to indicate the start of the pipeline execution and provide some context about the process.
 print("\n" + "="*50)
-print("     BIOINFORMATICS SEQUENCING PIPELINE (v1.7)")
+print("        BIOINFORMATICS SEQUENCING PIPELINE")
 print("="*50)
 print("[STATUS] Starting pipeline execution...")
 
@@ -105,15 +105,14 @@ try:
     
     # --- Clean Summary Table ---
     print("\n" + "-"*50)
-    print("     ANALYSIS METRICS SUMMARY")
+    print("              ANALYSIS METRICS SUMMARY")
     print("-"*50)
     print(f" Input DNA Length  : {len(dna_data)} bp")
     print(f" Output Protein    : {len(final_protein)} aa")
     print(f" Unknown Residues  : {final_protein.count('?')} detected")
     print("-"*50)
     
-    print("\nFINAL PROTEIN PRODUCT:")
-    print(f" {final_protein}")
+    print(f"\nFINAL PROTEIN PRODUCT: {final_protein}")
     print("="*50 + "\n")
 
 # If the specified FASTA file cannot be found, catch the FileNotFoundError and print an error message to inform the user about the issue and suggest verifying the system folder path layout.
